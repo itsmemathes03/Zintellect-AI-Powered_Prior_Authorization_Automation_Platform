@@ -1,0 +1,36 @@
+# Zintellect deployment
+#
+# Database note: the app intentionally uses SQLite (backend/zintellect.db,
+# hardcoded in app/database/db.py). A Postgres service was previously
+# provisioned here but never consumed by the code - it was removed to keep
+# the deployment honest. If you migrate to Postgres later, wire DATABASE_URL
+# through app/database/db.py first, then re-add a db service here.
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: zintellect-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      # Ollama runs on the host; point the backend at it explicitly.
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+    volumes:
+      - uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zintellect-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  uploads:

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Pipeline Error Alert</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;color:#111827;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background-color:#1e3a5f;padding:20px 24px;border-radius:8px 8px 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <span style="font-size:24px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">Zintellect</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Red Warning Header -->
+          <tr>
+            <td style="background-color:#dc2626;padding:16px 24px;text-align:center;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="font-size:15px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.5px;">
+                    &#9888; Pipeline Error Detected
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#ffffff;padding:32px 24px;color:#111827;">
+              <h2 style="margin:0 0 24px 0;font-size:20px;font-weight:600;color:#111827;">Error Summary</h2>
+              <p style="margin:0 0 24px 0;font-size:15px;line-height:24px;color:#374151;">An error occurred in the Zintellect pipeline that requires administrative attention.</p>
+
+              <!-- Error Details Card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-bottom:12px;font-size:13px;font-weight:600;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;">Error Summary</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:16px;font-size:15px;color:#111827;font-weight:500;">{{ error_summary|default('An unexpected error occurred.') }}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:12px;font-size:13px;font-weight:600;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;">Timestamp</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:16px;font-size:15px;color:#111827;font-weight:500;">{{ timestamp|default('N/A') }}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom:12px;font-size:13px;font-weight:600;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;">Affected Endpoint</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:15px;color:#111827;font-weight:500;">{{ affected_endpoint|default('N/A') }}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:8px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
+                      <tr>
+                        <td align="center" style="background-color:#2563eb;border-radius:8px;">
+                          <a href="{{ error_details_url|default('#') }}" target="_blank" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;background-color:#2563eb;border-radius:8px;border:1px solid #2563eb;">View Error Details</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f9fafb;padding:24px;text-align:center;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="font-size:13px;line-height:20px;color:#6b7280;">
+                    <p style="margin:0 0 8px 0;">This is an automated message from Zintellect.</p>
+                    <p style="margin:0 0 8px 0;">If you have questions, contact us at <a href="mailto:support@zintellect.com" style="color:#2563eb;text-decoration:underline;">support@zintellect.com</a></p>
+                    <p style="margin:0;color:#9ca3af;">&copy; {{ current_year|default('2026') }} Zintellect. All rights reserved.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

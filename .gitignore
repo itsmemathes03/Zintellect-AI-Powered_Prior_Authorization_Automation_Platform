@@ -1,0 +1,143 @@
+# =========================
+# Secrets & credentials
+# =========================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.secret
+backend/.env
+backend/file_encryption.key
+
+# =========================
+# Python virtual environments
+# =========================
+venv/
+.venv/
+venv311/
+backend/venv/
+backend/.venv/
+backend/venv311/
+backend/.venv_test/
+
+# =========================
+# Python cache / tooling
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Databases
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Runtime uploads / generated data
+# =========================
+test_uploads/
+backend/test_uploads/
+backend/uploads/
+backend/app/uploads/
+backend/app/vector_db/
+backend/app/temp/
+backend/data/
+backend/chroma/
+backend/chromadb/
+chroma_db/
+.chromadb/
+
+# =========================
+# Logs
+# =========================
+*.log
+*.err
+*.out
+
+# =========================
+# Node / frontend
+# =========================
+node_modules/
+frontend/node_modules/
+zintellect-site/node_modules/
+
+dist/
+build/
+frontend/dist/
+frontend/build/
+zintellect-site/dist/
+zintellect-site/build/
+
+# =========================
+# Archives / compressed files
+# =========================
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# =========================
+# Temporary validation artifacts
+# =========================
+backend/create_test_validation_docs.py
+backend/create_multipolicy_docs.py
+backend/fix_*.py
+backend/run_*.py
+backend/test_policy_driven_regression.py
+backend/test_cleanup_verification.py
+backend/test_e2e_mri_completion.py
+backend/test_e2e_mri_pipeline.py
+backend/test_e2e_mri_synthetic.txt
+backend/test_n8n_integration.py
+backend/test_ocr.png
+backend/test_ocr.py
+backend/test_policy_loader_guard.py
+backend/test_provider_registration.py
+backend/debug_openapi.py
+backend/_bench_ocr.py
+backend/load_*.csv
+backend/test_validation/
+
+# =========================
+# OS / IDE
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+_nul
+.vscode/
+.idea/
+*.tmp
+*.temp
+*.swp
+# =========================
+# n8n debug / execution artifacts
+# =========================
+backend/n8n_debug.json
+backend/n8n_exec_debug.json
+backend/n8n_exec_raw.json
+
+# Local development / temporary files
+.claude/
+test.md
+eSensitive*
+
+# Development artifacts
+contradiction_detection/22/
+
+# Secrets / local data
+backend/tests/_token.txt
+backend/.env
+backend/zintellect.db
+
+# Large media files
+*.mp4

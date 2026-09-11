@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Welcome to Zintellect</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f3f4f6;color:#111827;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background-color:#1e3a5f;padding:20px 24px;border-radius:8px 8px 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center">
+                    <span style="font-size:24px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">Zintellect</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#ffffff;padding:32px 24px;color:#111827;">
+              <h2 style="margin:0 0 8px 0;font-size:20px;font-weight:600;color:#111827;">Welcome, {{ user_name|default('there') }}!</h2>
+              <p style="margin:0 0 24px 0;font-size:15px;line-height:24px;color:#374151;">We're excited to have you on board.</p>
+
+              <!-- Intro Card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f5ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <p style="margin:0 0 12px 0;font-size:15px;line-height:24px;color:#1e3a5f;">Zintellect streamlines the prior authorization process for healthcare providers. Our platform uses intelligent automation to reduce turnaround times, minimize denials, and keep your team focused on patient care.</p>
+                    <p style="margin:0;font-size:15px;line-height:24px;color:#1e3a5f;">With Zintellect, you can submit requests, track statuses, and manage documents &mdash; all in one place.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:8px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
+                      <tr>
+                        <td align="center" style="background-color:#2563eb;border-radius:8px;">
+                          <a href="{{ login_url|default('#') }}" target="_blank" style="display:inline-block;padding:12px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;background-color:#2563eb;border-radius:8px;border:1px solid #2563eb;">Log In to Your Account</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f9fafb;padding:24px;text-align:center;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="font-size:13px;line-height:20px;color:#6b7280;">
+                    <p style="margin:0 0 8px 0;">This is an automated message from Zintellect.</p>
+                    <p style="margin:0 0 8px 0;">If you have questions, contact us at <a href="mailto:support@zintellect.com" style="color:#2563eb;text-decoration:underline;">support@zintellect.com</a></p>
+                    <p style="margin:0;color:#9ca3af;">&copy; {{ current_year|default('2026') }} Zintellect. All rights reserved.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

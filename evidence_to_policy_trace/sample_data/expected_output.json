@@ -1,0 +1,103 @@
+{
+    "request_id": "PA-TEST-001",
+    "feature": "evidence_to_policy_trace",
+    "results": [
+        {
+            "requirement_id": "REQ-001",
+            "requirement": "Clinical indication must be documented",
+            "status": "matched",
+            "confidence": 0.92,
+            "evidence": [
+                {
+                    "evidence_id": "E-001",
+                    "text": "Patient presents with recurrent headaches and neurological symptoms including blurred vision and dizziness.",
+                    "document_id": "DOC-001",
+                    "document_name": "clinical_notes.pdf",
+                    "page": 2,
+                    "section": null,
+                    "confidence": 0.94
+                },
+                {
+                    "evidence_id": "E-002",
+                    "text": "Patient reports experiencing headaches for the past 3 months, occurring 2-3 times per week.",
+                    "document_id": "DOC-001",
+                    "document_name": "clinical_notes.pdf",
+                    "page": 2,
+                    "section": null,
+                    "confidence": 0.91
+                }
+            ],
+            "explanation": "Found 2 supporting evidence item(s) for requirement: 'Clinical indication must be documented'"
+        },
+        {
+            "requirement_id": "REQ-002",
+            "requirement": "Neurological symptoms must be documented",
+            "status": "matched",
+            "confidence": 0.90,
+            "evidence": [
+                {
+                    "evidence_id": "E-001",
+                    "text": "Patient presents with recurrent headaches and neurological symptoms including blurred vision and dizziness.",
+                    "document_id": "DOC-001",
+                    "document_name": "clinical_notes.pdf",
+                    "page": 2,
+                    "section": null,
+                    "confidence": 0.94
+                },
+                {
+                    "evidence_id": "E-003",
+                    "text": "Neurological examination shows mild cranial nerve deficits but no signs of increased intracranial pressure.",
+                    "document_id": "DOC-001",
+                    "document_name": "clinical_notes.pdf",
+                    "page": 3,
+                    "section": null,
+                    "confidence": 0.88
+                }
+            ],
+            "explanation": "Found 2 supporting evidence item(s) for requirement: 'Neurological symptoms must be documented'"
+        },
+        {
+            "requirement_id": "REQ-003",
+            "requirement": "Failed conservative treatment must be documented",
+            "status": "matched",
+            "confidence": 0.85,
+            "evidence": [
+                {
+                    "evidence_id": "E-004",
+                    "text": "Patient has tried over-the-counter pain medications and rest with minimal improvement.",
+                    "document_id": "DOC-002",
+                    "document_name": "treatment_notes.pdf",
+                    "page": 1,
+                    "section": null,
+                    "confidence": 0.85
+                }
+            ],
+            "explanation": "Found 1 supporting evidence item(s) for requirement: 'Failed conservative treatment must be documented'"
+        },
+        {
+            "requirement_id": "REQ-004",
+            "requirement": "No contraindications to MRI must be documented",
+            "status": "matched",
+            "confidence": 0.90,
+            "evidence": [
+                {
+                    "evidence_id": "E-005",
+                    "text": "No known allergies to contrast media or history of claustrophobia reported.",
+                    "document_id": "DOC-002",
+                    "document_name": "treatment_notes.pdf",
+                    "page": 1,
+                    "section": null,
+                    "confidence": 0.90
+                }
+            ],
+            "explanation": "Found 1 supporting evidence item(s) for requirement: 'No contraindications to MRI must be documented'"
+        }
+    ],
+    "summary": {
+        "total_requirements": 4,
+        "matched": 4,
+        "missing": 0,
+        "uncertain": 0,
+        "contradicted": 0
+    }
+}

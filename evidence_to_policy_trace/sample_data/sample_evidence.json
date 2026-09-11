@@ -1,0 +1,52 @@
+[
+    {
+        "evidence_id": "E-001",
+        "text": "Patient presents with recurrent headaches and neurological symptoms including blurred vision and dizziness.",
+        "document_id": "DOC-001",
+        "document_name": "clinical_notes.pdf",
+        "page": 2,
+        "entity_type": "symptom",
+        "entity_value": "headaches",
+        "confidence": 0.94
+    },
+    {
+        "evidence_id": "E-002",
+        "text": "Patient reports experiencing headaches for the past 3 months, occurring 2-3 times per week.",
+        "document_id": "DOC-001",
+        "document_name": "clinical_notes.pdf",
+        "page": 2,
+        "entity_type": "symptom",
+        "entity_value": "headaches",
+        "confidence": 0.91
+    },
+    {
+        "evidence_id": "E-003",
+        "text": "Neurological examination shows mild cranial nerve deficits but no signs of increased intracranial pressure.",
+        "document_id": "DOC-001",
+        "document_name": "clinical_notes.pdf",
+        "page": 3,
+        "entity_type": "examination",
+        "entity_value": "neurological exam",
+        "confidence": 0.88
+    },
+    {
+        "evidence_id": "E-004",
+        "text": "Patient has tried over-the-counter pain medications and rest with minimal improvement.",
+        "document_id": "DOC-002",
+        "document_name": "treatment_notes.pdf",
+        "page": 1,
+        "entity_type": "treatment",
+        "entity_value": "conservative treatment",
+        "confidence": 0.85
+    },
+    {
+        "evidence_id": "E-005",
+        "text": "No known allergies to contrast media or history of claustrophobia reported.",
+        "document_id": "DOC-002",
+        "document_name": "treatment_notes.pdf",
+        "page": 1,
+        "entity_type": "history",
+        "entity_value": "contraindication check",
+        "confidence": 0.90
+    }
+]
