@@ -131,8 +131,7 @@ Externalize configuration using:
 - Dependency injection containers
 
 ### 4. Deployment
-- Containerize with Docker
-- Deploy to Kubernetes/cloud platforms
+- Deploy to cloud platforms
 - Set up monitoring, logging, and alerting
 - Implement CI/CD pipelines
 

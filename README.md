@@ -93,12 +93,6 @@ python seed_demo_credentials.py
 | Provider | `provider@gmail.com` | `provider123` | `/provider-login` |
 | Admin | `admin@gmail.com` | `admin123` | `/admin-login` |
 
-## Quick Start (Docker)
-
-```bash
-# TODO: Add Docker Compose instructions
-```
-
 ## Admin Panel
 
 ### Endpoints (backend `/admin` routes)
