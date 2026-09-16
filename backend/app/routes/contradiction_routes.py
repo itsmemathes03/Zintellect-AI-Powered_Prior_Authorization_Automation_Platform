@@ -26,6 +26,7 @@ from app.services.contradiction_detection.models import (
 )
 from app.services.contradiction_detection.detector import detect_contradictions
 from app.services.contradiction_detection.adapter import adapt_zintellect_request
+from app.services.n8n_event_emitter import emit_event, Events
 
 router = APIRouter(prefix="/api/contradictions", tags=["Contradiction Detection"])
 
@@ -124,11 +125,27 @@ def detect_for_pa_request(
             detail=f"Contradiction detection failed: {str(e)}"
         )
 
+    # --- n8n: contradiction_detected (only when real contradictions exist) ---
+    result_dump = result.model_dump()
+    contradictions = result_dump.get("contradictions", [])
+    if contradictions and len(contradictions) > 0:
+        emit_event(
+            event=Events.CONTRADICTION_DETECTED,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status="contradiction_found",
+            actor_role="system",
+            extra={
+                "contradiction_count": len(contradictions),
+            },
+        )
+
     # ---- Return result (read-only, no state mutation) ----
     return {
         "status": "Success",
         "request_id": request_id,
-        "contradiction_analysis": result.model_dump(),
+        "contradiction_analysis": result_dump,
     }
 
 

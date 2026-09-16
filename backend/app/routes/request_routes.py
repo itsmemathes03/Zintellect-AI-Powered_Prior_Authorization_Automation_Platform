@@ -48,6 +48,7 @@ from app.services.auth_middleware import verify_jwt_token
 
 from app.services.cleanup_service import cleanup_request_files
 from app.services.n8n_service import notify_n8n
+from app.services.n8n_event_emitter import emit_event, Events
 
 router = APIRouter()
 
@@ -175,6 +176,21 @@ async def submit_request(
 
         db.commit()
 
+        # --- n8n: prior_authorization_created ---
+        emit_event(
+            event=Events.PRIOR_AUTHORIZATION_CREATED,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status="created",
+            actor_role="provider",
+            extra={
+                "provider_id": token_data.get("sub", ""),
+                "procedure_code": procedureCode,
+                "insurance_provider": insuranceProvider,
+            },
+        )
+
         combined_text = ""
 
         entities = {}
@@ -256,6 +272,19 @@ async def submit_request(
 
             db.commit()
 
+            # --- n8n: document_uploaded (per file) ---
+            emit_event(
+                event=Events.DOCUMENT_UPLOADED,
+                entity_type="prior_authorization",
+                entity_id=request_id,
+                request_id=request_id,
+                status="uploaded",
+                actor_role="provider",
+                extra={
+                    "provider_id": token_data.get("sub", ""),
+                },
+            )
+
             update_stage(request_id, "OCR Completed", "completed")
 
             # ==========================================
@@ -265,6 +294,16 @@ async def submit_request(
             new_request.processing_stage = "Extracting document text"
 
             db.commit()
+
+            # --- n8n: document_processing_started ---
+            emit_event(
+                event=Events.DOCUMENT_PROCESSING_STARTED,
+                entity_type="prior_authorization",
+                entity_id=request_id,
+                request_id=request_id,
+                status="processing",
+                actor_role="system",
+            )
 
             _ocr_start = time.time()
             raw_text = extract_text(full_file_path)
@@ -343,6 +382,19 @@ async def submit_request(
 
         print(combined_text[:2000])
         print(f"\n  [DIAG] Combined text: {len(combined_text)} chars from {_file_index} files")
+
+        # --- n8n: document_processing_completed ---
+        emit_event(
+            event=Events.DOCUMENT_PROCESSING_COMPLETED,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status="completed",
+            actor_role="system",
+            extra={
+                "uploaded_document_types": uploaded_document_types,
+            },
+        )
 
         # ==========================================
         # PHI MASKING
@@ -625,13 +677,12 @@ async def submit_request(
         print(f"  [DIAG] ====================================\n")
 
         # ==========================================
-        # DISPATCH TO N8N (fire-and-forget)
+        # N8N EVENT EMISSIONS (fire-and-forget)
         # ==========================================
-        # HCI-03: Do NOT send the existing n8n prior_authorization_decision
-        # event when the AI recommendation is first generated.  That would
-        # trigger an Approved/Rejected email BEFORE human review.
+        # HCI-03: Do NOT send prior_authorization_decision when the AI
+        # recommendation is first generated.  That would trigger an
+        # Approved/Rejected email BEFORE human review.
         # n8n receives the final human decision only (from review_routes).
-        # The existing n8n workflow and nodes are unchanged.
 
         _n8n_provider_id = token_data.get(
             "provider_id", token_data.get("sub", "")
@@ -640,7 +691,34 @@ async def submit_request(
             "name", ""
         )
 
-        # No notify_n8n dispatch here — wait for human decision.
+        # Emit AI recommendation generated (advisory, not final)
+        emit_event(
+            event=Events.AI_RECOMMENDATION_GENERATED,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status=decision,
+            actor_role="system",
+            extra={
+                "confidence_score": confidence_score,
+                "insurance_provider": insuranceProvider,
+                "procedure_code": procedureCode,
+                "provider_id": _n8n_provider_id,
+            },
+        )
+
+        # Emit awaiting human review
+        emit_event(
+            event=Events.AWAITING_HUMAN_REVIEW,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status="Awaiting Review",
+            actor_role="system",
+            extra={
+                "provider_id": _n8n_provider_id,
+            },
+        )
 
         # ==========================================
         # FINAL RESPONSE

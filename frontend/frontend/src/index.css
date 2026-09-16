@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply m-0 p-0 bg-slate-50 text-slate-900 font-sans;
+  }
+
+  .dark body {
+    @apply bg-navy-950 text-slate-100;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-card;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:border-slate-300 transition-all duration-200;
+  }
+
+  .dark .card {
+    @apply bg-navy-900 border-navy-800;
+  }
+
+  .dark .card-hover {
+    @apply hover:border-navy-700;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-brand-700 text-white text-sm font-semibold hover:bg-brand-800 active:bg-brand-900 transition-colors duration-150 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-white text-slate-700 text-sm font-semibold border border-slate-300 hover:bg-slate-50 active:bg-slate-100 transition-colors duration-150;
+  }
+
+  .dark .btn-secondary {
+    @apply bg-navy-800 text-slate-200 border-navy-700 hover:bg-navy-700;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-danger-600 text-white text-sm font-semibold hover:bg-danger-700 active:bg-danger-700 transition-colors duration-150;
+  }
+
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-success-600 text-white text-sm font-semibold hover:bg-success-700 active:bg-success-700 transition-colors duration-150;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors duration-150;
+  }
+
+  .dark .input-field {
+    @apply bg-navy-800 border-navy-700 text-slate-100 placeholder-slate-500 focus:ring-brand-400/20 focus:border-brand-400;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
+  }
+
+  .dark .label {
+    @apply text-slate-300;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-slate-200 rounded-lg;
+  }
+
+  .dark .skeleton {
+    @apply bg-navy-800;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

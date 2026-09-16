@@ -23,6 +23,7 @@ from app.services.email.sender import send_pa_status_email
 from app.services.email.schemas import PAStatusUpdateContext
 from datetime import datetime
 import uuid
+from app.services.n8n_event_emitter import emit_event, Events
 
 router = APIRouter(prefix="/provider", tags=["Provider"])
 
@@ -106,6 +107,18 @@ def provider_register(request: ProviderRegisterRequest):
                 "role": "provider",
                 "name": request.provider_name,
             }
+        )
+
+        # Emit provider registered event
+        emit_event(
+            event=Events.PROVIDER_REGISTERED,
+            entity_type="provider",
+            entity_id=shared_id,
+            status="registered",
+            actor_role="system",
+            extra={
+                "provider_id": shared_id,
+            },
         )
 
         return {

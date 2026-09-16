@@ -55,9 +55,12 @@ class EvidenceExtractionAdapter:
         document = self._document_store.get(document_id)
         if document:
             logger.info(f"Found document {document_id}")
-        else:
-            logger.warning(f"Document {document_id} not found")
-        return document
+            return document
+
+        # Unknown documents are NOT treated as genuine medical evidence.
+        # Return None so the caller can raise a 404 / structured validation error.
+        logger.warning(f"Document {document_id} not found in document store")
+        return None
 
 
 # Factory function

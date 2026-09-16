@@ -125,7 +125,7 @@ def normalize_entities(parsed):
             else {}
         )
 
-        # ---- Coerce list fields that LLM may return as strings ----
+        # ---- Coerce list fields that LLM may return as strings/dicts ----
         for key in ("symptoms", "medications"):
             val = source.get(key)
             if isinstance(val, str):
@@ -133,13 +133,37 @@ def normalize_entities(parsed):
                     [val] if val.strip()
                     else []
                 )
-            elif not isinstance(val, list):
+            elif isinstance(val, list):
+                # Normalize: convert dicts to strings
+                normalized = []
+                for item in val:
+                    if isinstance(item, dict):
+                        name = item.get("name", "")
+                        dosage = item.get("dosage", "")
+                        if name:
+                            normalized.append(
+                                f"{name} {dosage}".strip()
+                                if dosage else name
+                            )
+                    elif isinstance(item, str):
+                        normalized.append(item)
+                    else:
+                        normalized.append(str(item))
+                source[key] = normalized
+            else:
                 source[key] = []
 
-        # ---- Coerce string fields that LLM may return as lists ----
+        # ---- Coerce string fields that LLM may return as dicts/lists ----
         for key in ("diagnosis", "procedure_requested"):
             val = source.get(key)
-            if isinstance(val, list):
+            if isinstance(val, dict):
+                # Model sometimes returns {} or {"name": "X"} for these fields
+                source[key] = (
+                    val.get("name", "")
+                    if val.get("name")
+                    else ""
+                )
+            elif isinstance(val, list):
                 source[key] = (
                     " ".join(str(v) for v in val)
                     if val else ""
@@ -175,22 +199,104 @@ def normalize_entities(parsed):
 
 
 # =====================================================
+# SOURCE-GROUNDING VALIDATION
+# =====================================================
+# After extraction, verify that each entity is actually
+# supported by the clinical text. This prevents hallucinated
+# diagnoses, symptoms, and procedures from reaching the
+# policy-matching pipeline.
+
+def _validate_source_grounding(entities, clinical_text):
+    """
+    Check that extracted entities have textual evidence in the
+    clinical document. Remove unsupported extractions.
+
+    Grounding rules:
+    - diagnosis: at least 40% of significant words (len > 3)
+      must appear in the clinical text
+    - procedure_requested: at least one significant word must
+      appear in the clinical text
+    - symptoms: each symptom must have at least one word (len > 3)
+      that appears in the clinical text
+    - medications: each medication name must have at least one
+      word (len > 3) that appears in the clinical text
+    """
+    text_lower = clinical_text.lower()
+
+    def _word_overlap(value, text, threshold=0.4):
+        """Check if enough words from value appear in text."""
+        if not value:
+            return True  # empty is always grounded
+        words = [w for w in value.lower().split() if len(w) > 3]
+        if not words:
+            return True  # no significant words to check
+        found = sum(1 for w in words if w in text)
+        return (found / len(words)) >= threshold
+
+    def _any_word_present(value, text):
+        """Check if any significant word from value appears in text."""
+        if not value:
+            return True
+        words = [w for w in value.lower().split() if len(w) > 3]
+        if not words:
+            return True
+        return any(w in text for w in words)
+
+    # -- Validate diagnosis --
+    diag = entities.get("diagnosis", "")
+    if diag and not _word_overlap(diag, text_lower, 0.3):
+        print(f"[SOURCE-GROUND] Removing unsupported diagnosis: '{diag}'")
+        entities["diagnosis"] = ""
+
+    # -- Validate procedure_requested --
+    proc = entities.get("procedure_requested", "")
+    if proc and not _any_word_present(proc, text_lower):
+        print(f"[SOURCE-GROUND] Removing unsupported procedure: '{proc}'")
+        entities["procedure_requested"] = ""
+
+    # -- Validate symptoms (remove unsupported ones) --
+    symptoms = entities.get("symptoms", [])
+    grounded_symptoms = []
+    for sym in symptoms:
+        sym_str = str(sym) if not isinstance(sym, str) else sym
+        if _any_word_present(sym_str, text_lower):
+            grounded_symptoms.append(sym)
+        else:
+            print(f"[SOURCE-GROUND] Removing unsupported symptom: '{sym_str}'")
+    entities["symptoms"] = grounded_symptoms
+
+    # -- Validate medications (remove unsupported ones) --
+    medications = entities.get("medications", [])
+    grounded_meds = []
+    for med in medications:
+        med_str = str(med) if not isinstance(med, str) else med
+        if _any_word_present(med_str, text_lower):
+            grounded_meds.append(med)
+        else:
+            print(f"[SOURCE-GROUND] Removing unsupported medication: '{med_str}'")
+    entities["medications"] = grounded_meds
+
+    return entities
+
+
+# =====================================================
 # MEDICAL ENTITY EXTRACTION
 # =====================================================
 
 def extract_medical_entities(clinical_text):
 
     prompt = f"""
-You are an advanced healthcare prior authorization AI.
+You are a healthcare prior-authorization entity extractor.
 
-Extract ONLY explicitly mentioned medical information.
-
-Rules:
-- No hallucinations
-- No assumptions
-- Return STRICT JSON ONLY
-- No markdown
-- No explanations
+CRITICAL RULES:
+1. Extract ONLY information EXPLICITLY stated in the clinical text below.
+2. Do NOT infer, deduce, guess, or assume any medical information.
+3. If a field has no supporting evidence in the text, return an empty string or empty list.
+4. Do NOT add diagnoses, symptoms, medications, or procedures not directly mentioned.
+5. A procedure "ORDER" or "REQUEST" counts as explicitly mentioned.
+6. A diagnosis in an "ASSESSMENT" or "IMPRESSION" section counts.
+7. "Denies", "No", "Without", "Negative for" means the symptom is ABSENT — do NOT extract it.
+8. Return STRICT JSON ONLY. No markdown. No explanations.
 
 JSON Format:
 
@@ -435,7 +541,17 @@ Clinical Documents:
 
             parsed["symptoms"] = symptoms
 
+        # ===================================
+        # SOURCE-GROUNDING VALIDATION
+        # ===================================
+        # Verify that extracted entities are actually supported by
+        # the clinical text. This prevents hallucinated diagnoses,
+        # symptoms, and procedures from passing through.
+
         final_output = normalize_entities(parsed)
+        final_output = _validate_source_grounding(
+            final_output, clinical_text
+        )
 
         print(
             json.dumps(

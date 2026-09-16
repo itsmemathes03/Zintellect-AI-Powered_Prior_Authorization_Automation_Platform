@@ -23,6 +23,7 @@ from app.services.email_service import send_insurance_email
 from app.services.email.sender import send_test_email
 from app.services.email.config import email_settings
 from datetime import datetime, timedelta
+from app.services.n8n_event_emitter import emit_event, Events
 import asyncio
 import uuid
 import secrets
@@ -373,6 +374,19 @@ def update_policy_status(
     )
     db.add(audit)
     db.commit()
+
+    # --- n8n: policy_updated ---
+    emit_event(
+        event=Events.POLICY_UPDATED,
+        entity_type="policy",
+        entity_id=policy_id,
+        status=str(request.status.value) if hasattr(request.status, 'value') else str(request.status),
+        actor_role="admin",
+        extra={
+            "policy_id": policy_id,
+        },
+    )
+
     return {"status": "Success", "message": f"Policy {request.status}"}
 
 

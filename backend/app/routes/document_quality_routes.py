@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, status
+from app.services.n8n_event_emitter import emit_event, Events
 from typing import List, Optional
 from ..services.document_quality.service import DocumentQualityService, create_document_quality_service
 from ..services.document_quality.schemas import DocumentQualityCheckResponse
@@ -48,6 +49,20 @@ async def check_document_quality(
         document_id=document_id,
         request_id=request_id
     )
+
+    # --- n8n: document_quality_failed (only when quality actually fails) ---
+    if result.quality_status and str(result.quality_status).upper() in ("FAIL", "FAILED"):
+        emit_event(
+            event=Events.DOCUMENT_QUALITY_FAILED,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status="failed",
+            actor_role="system",
+            extra={
+                "quality_status": str(result.quality_status),
+            },
+        )
 
     # Convert to response model
     return DocumentQualityCheckResponse(

@@ -1,13 +1,60 @@
 import sys
 import os
+import typing
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# ==========================================
+# WORKAROUND: Pydantic v2.13 + Python 3.9
+# ==========================================
+# pydantic_core 2.46 defines CoreSchemaOrFieldType as
+# Literal[Literal[...], Literal[...]] (nested Literals).
+# On Python 3.9, get_literal_values() does not flatten
+# nested Literals — it yields _GenericAlias objects.
+# GenerateJsonSchema.build_schema_type_to_method() then
+# calls .replace() on those objects, which crashes.
+# Patch get_literal_values to flatten nested Literals.
+if sys.version_info < (3, 10):
+    try:
+        import pydantic.json_schema as _pjs
+        _orig_get_literal_values = _pjs.get_literal_values
+
+        def _patched_get_literal_values(
+            annotation, /, *, type_check=False,
+            unpack_type_aliases='eager',
+        ):
+            if (
+                hasattr(annotation, '__args__')
+                and getattr(annotation, '__origin__', None) is typing.Literal
+            ):
+                for arg in annotation.__args__:
+                    if (
+                        hasattr(arg, '__args__')
+                        and getattr(arg, '__origin__', None) is typing.Literal
+                    ):
+                        yield from _patched_get_literal_values(
+                            arg, type_check=type_check,
+                            unpack_type_aliases=unpack_type_aliases,
+                        )
+                    else:
+                        yield arg
+            else:
+                yield from _orig_get_literal_values(
+                    annotation, type_check=type_check,
+                    unpack_type_aliases=unpack_type_aliases,
+                )
+
+        _pjs.get_literal_values = _patched_get_literal_values
+    except Exception:
+        pass
+
 from app.database.db import Base, engine
 
 load_dotenv()
+
+APP_ENV = os.getenv("APP_ENV", "development")
 
 # ==========================================
 # IMPORT DATABASE MODELS
@@ -60,6 +107,9 @@ from app.routes.evidence_extraction_routes import router as evidence_extraction_
 from app.routes.policy_versioning_routes import router as policy_versioning_router
 from app.routes.provider_communication_routes import router as provider_communication_router
 from app.routes.request_prioritization_routes import router as request_prioritization_router
+from app.routes.readiness_score_routes import router as readiness_score_router
+from app.routes.appeal_assistant_routes import router as appeal_assistant_router
+from app.routes.chat_routes import router as chat_router
 
 # ==========================================
 # CREATE DATABASE TABLES
@@ -210,11 +260,64 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:5173")],
+    allow_origins=[
+        url.strip()
+        for url in os.getenv(
+            "FRONTEND_URL",
+            "http://localhost:5173,http://127.0.0.1:5173,"
+            "http://localhost:5174,http://127.0.0.1:5174,"
+            "http://localhost:5175,http://127.0.0.1:5175,"
+            "http://localhost:5176,http://127.0.0.1:5176,"
+            "http://localhost:5177,http://127.0.0.1:5177,"
+            "http://localhost:5178,http://127.0.0.1:5178,"
+            "http://localhost:5179,http://127.0.0.1:5179",
+        ).split(",")
+        if url.strip()
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ==========================================
+# GLOBAL ERROR HANDLER → n8n → Telegram
+# ==========================================
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Catch-all exception handler for unhandled errors.
+    Emits an error event to n8n for Telegram notification,
+    then returns a safe generic error to the frontend.
+    Never exposes internal details to the client.
+    """
+    try:
+        from app.services.error_monitor import emit_error
+
+        # Extract safe request context
+        route = str(request.url.path)
+        method = request.method
+        request_id = getattr(request.state, "request_id", "")
+
+        emit_error(
+            error=exc,
+            route=route,
+            method=method,
+            request_id=request_id,
+        )
+    except Exception:
+        # Error monitoring must never break the error handler
+        pass
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
 
 # ==========================================
 # REGISTER ROUTES
@@ -239,6 +342,9 @@ app.include_router(evidence_extraction_router)
 app.include_router(policy_versioning_router)
 app.include_router(provider_communication_router)
 app.include_router(request_prioritization_router)
+app.include_router(readiness_score_router)
+app.include_router(appeal_assistant_router)
+app.include_router(chat_router)
 
 # ==========================================
 # HEALTH CHECK
@@ -253,6 +359,23 @@ def home():
         "status": "Healthy",
         "version": "2.0.0",
     }
+
+
+# ==========================================
+# ERROR MONITORING TEST ENDPOINT
+# ==========================================
+
+
+@app.get("/test-error-monitor")
+def test_error_monitor():
+    """
+    Test endpoint for error monitoring.
+    Deliberately raises an error to trigger the error monitor.
+    Only available in development environment.
+    """
+    if APP_ENV != "development":
+        return {"detail": "Not available in production"}
+    raise RuntimeError("Test error: error monitoring pipeline test")
 
 
 # ==========================================

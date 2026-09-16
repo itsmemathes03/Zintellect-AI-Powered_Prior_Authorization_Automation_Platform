@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 n8n Workflow Automation Service
 

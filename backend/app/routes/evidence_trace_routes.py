@@ -22,6 +22,7 @@ from app.models.policy_model import InsurancePolicy
 from app.services.auth_middleware import require_role
 from app.services.evidence_trace.service import process_evidence_trace
 from app.services.evidence_trace.zintellect_adapter import adapt_zintellect_request
+from app.services.n8n_event_emitter import emit_event, Events
 
 router = APIRouter(prefix="/api/evidence-trace", tags=["Evidence Traceability"])
 
@@ -149,6 +150,21 @@ def get_evidence_trace(
         "procedure": module_input.get("procedure", ""),
         "insurance_provider": req.insurance_provider or "",
     }
+
+    # --- n8n: evidence_gap_detected (only when real gaps exist) ---
+    summary = result.get("summary", {})
+    missing_count = summary.get("missing_count", 0) or summary.get("missing", 0)
+    if missing_count and int(missing_count) > 0:
+        emit_event(
+            event=Events.EVIDENCE_GAP_DETECTED,
+            entity_type="prior_authorization",
+            entity_id=request_id,
+            request_id=request_id,
+            status="gap_detected",
+            actor_role="system",
+            extra={},
+        )
+
     return {
         "status": "Success",
         "request_id": request_id,

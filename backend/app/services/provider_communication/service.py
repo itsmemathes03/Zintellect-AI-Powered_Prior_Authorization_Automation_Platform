@@ -3,6 +3,7 @@ Service for the Provider Communication feature.
 """
 import logging
 from typing import Optional
+from fastapi import HTTPException
 from .communicator import ProviderCommunicator, create_provider_communicator
 from .adapter import ProviderCommunicationAdapter
 from .models import CommunicationRecord, CommunicationTemplate
@@ -39,11 +40,11 @@ class ProviderCommunicationService:
         # Convert the schema request to the internal CommunicationRequest
         from .models import CommunicationRequest, CommunicationChannel, TemplateType
         try:
-            channel = CommunicationChannel(request.channel)
-            template_type = TemplateType(request.template_type)
+            channel = CommunicationChannel(request.channel.upper())
+            template_type = TemplateType(request.template_type.upper())
         except ValueError as e:
             logger.error(f"Invalid channel or template type: {e}")
-            raise ValueError(f"Invalid channel or template type: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid channel or template type: {e}")
 
         internal_request = CommunicationRequest(
             request_id=request.request_id,

@@ -440,15 +440,18 @@ r6 = subprocess.run(
 print(f"  Phase 6: {r6.returncode} — {'PASS' if r6.returncode == 0 else 'FAIL'}")
 
 # Frontend build
-rfe = subprocess.run(
-    ["npx", "vite", "build"],
-    capture_output=True, text=True, timeout=60,
-    cwd=os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
-)
-if "built in" in rfe.stdout:
-    print("  ✓ Frontend build succeeds")
-else:
-    print(f"  ✗ Frontend build failed: {rfe.stdout[-200:]}")
+try:
+    rfe = subprocess.run(
+        ["npx", "vite", "build"],
+        capture_output=True, text=True, timeout=60,
+        cwd=os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
+    )
+    if "built in" in rfe.stdout:
+        print("  ✓ Frontend build succeeds")
+    else:
+        print(f"  ✗ Frontend build failed: {rfe.stdout[-200:]}")
+except FileNotFoundError:
+    print("  ⚠ Frontend build skipped (npx not found)")
 
 
 # ============================================================

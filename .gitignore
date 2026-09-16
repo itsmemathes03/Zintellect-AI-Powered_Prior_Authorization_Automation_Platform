@@ -7,15 +7,15 @@
 *.key
 *.pem
 *.secret
-backend/.env
-backend/file_encryption.key
 
 # =========================
 # Python virtual environments
 # =========================
 venv/
 .venv/
-venv311/
+env/
+ENV/
+.venv_test/
 backend/venv/
 backend/.venv/
 backend/venv311/
@@ -32,6 +32,7 @@ __pycache__/
 .mypy_cache/
 .coverage
 htmlcov/
+coverage/
 
 # =========================
 # Databases
@@ -54,6 +55,8 @@ backend/chroma/
 backend/chromadb/
 chroma_db/
 .chromadb/
+app/vector_db/
+app/uploads/
 
 # =========================
 # Logs
@@ -67,14 +70,16 @@ chroma_db/
 # =========================
 node_modules/
 frontend/node_modules/
-zintellect-site/node_modules/
+frontend/frontend/node_modules/
 
 dist/
 build/
 frontend/dist/
 frontend/build/
-zintellect-site/dist/
-zintellect-site/build/
+frontend/frontend/dist/
+
+.vite/
+.cache/
 
 # =========================
 # Archives / compressed files
@@ -86,7 +91,7 @@ zintellect-site/build/
 *.gz
 
 # =========================
-# Temporary validation artifacts
+# Temporary / validation artifacts
 # =========================
 backend/create_test_validation_docs.py
 backend/create_multipolicy_docs.py
@@ -106,6 +111,11 @@ backend/debug_openapi.py
 backend/_bench_ocr.py
 backend/load_*.csv
 backend/test_validation/
+backend/n8n_debug.json
+backend/n8n_exec_debug.json
+backend/n8n_exec_raw.json
+backend/n8n_workflow_fixed.json
+backend/n8n_workflow_v2.json
 
 # =========================
 # OS / IDE
@@ -119,25 +129,49 @@ _nul
 *.tmp
 *.temp
 *.swp
-# =========================
-# n8n debug / execution artifacts
-# =========================
-backend/n8n_debug.json
-backend/n8n_exec_debug.json
-backend/n8n_exec_raw.json
 
-# Local development / temporary files
+# =========================
+# AI models (download separately)
+# =========================
+models/
+weights/
+checkpoints/
+*.gguf
+*.safetensors
+*.pt
+*.pth
+*.onnx
+
+# =========================
+# Vector DB / generated indexes
+# =========================
+vector_db/
+chroma/
+chromadb/
+
+# =========================
+# Large media
+# =========================
+*.mp4
+
+# =========================
+# Local development
+# =========================
 .claude/
 test.md
 eSensitive*
 
-# Development artifacts
-contradiction_detection/22/
+# =========================
+# Development artifacts (reviewed & removed)
+# =========================
+contradiction_detection/
+5features/
+app/
+frontend_backup/
+zintellect-site/
 
-# Secrets / local data
-backend/tests/_token.txt
-backend/.env
-backend/zintellect.db
-
-# Large media files
-*.mp4
+# =========================
+# Temp frontend logs
+# =========================
+frontend/frontend/vite.log
+frontend/frontend/test-results/

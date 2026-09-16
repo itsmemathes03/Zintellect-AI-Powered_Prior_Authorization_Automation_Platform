@@ -6,6 +6,7 @@ from app.models.request_model import PriorAuthRequest
 from app.models.user_model import User
 from app.services.email.sender import send_sla_breach_email
 from app.services.email.schemas import SLABreachContext
+from app.services.n8n_event_emitter import emit_event, Events
 
 
 # ==========================================
@@ -36,12 +37,36 @@ def create_notification(
         db.commit()
         db.refresh(notification)
 
+        # --- n8n: notification_sent ---
+        emit_event(
+            event=Events.NOTIFICATION_SENT,
+            entity_type="notification",
+            entity_id=str(notification.id),
+            request_id=request_id or "",
+            status="sent",
+            actor_role="system",
+        )
+
         return notification
 
     except Exception as e:
 
         db.rollback()
         print("Notification Error:", str(e))
+
+        # --- n8n: notification_failed ---
+        try:
+            emit_event(
+                event=Events.NOTIFICATION_FAILED,
+                entity_type="notification",
+                entity_id="",
+                request_id=request_id or "",
+                status="failed",
+                actor_role="system",
+            )
+        except Exception:
+            pass
+
         return None
 
     finally:
@@ -190,6 +215,18 @@ def check_sla_breaches():
                         message=f"SLA breached for request {req.id}",
                         request_id=req.id,
                     )
+                    # Emit SLA warning event to n8n
+                    emit_event(
+                        event=Events.SLA_WARNING,
+                        entity_type="prior_authorization",
+                        entity_id=req.id,
+                        request_id=req.id,
+                        status="sla_breached",
+                        actor_role="system",
+                        extra={
+                            "sla_deadline": req.sla_deadline.isoformat() if req.sla_deadline else "",
+                        },
+                    )
                     warning_sent = True
 
             elif req.sla_deadline <= approaching_threshold:
@@ -203,6 +240,18 @@ def check_sla_breaches():
                         notification_type="SLA_WARNING",
                         message=f"SLA approaching for request {req.id} (deadline: {req.sla_deadline})",
                         request_id=req.id,
+                    )
+                    # Emit SLA warning event to n8n
+                    emit_event(
+                        event=Events.SLA_WARNING,
+                        entity_type="prior_authorization",
+                        entity_id=req.id,
+                        request_id=req.id,
+                        status="sla_approaching",
+                        actor_role="system",
+                        extra={
+                            "sla_deadline": req.sla_deadline.isoformat() if req.sla_deadline else "",
+                        },
                     )
                     warning_sent = True
 

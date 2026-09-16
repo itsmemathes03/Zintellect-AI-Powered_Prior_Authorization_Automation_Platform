@@ -15,6 +15,7 @@ from app.services.auth_service import (
     verify_password,
     create_access_token,
 )
+from app.services.n8n_event_emitter import emit_event, Events
 from app.services.email.sender import send_welcome_email
 from app.services.email.schemas import WelcomeContext
 from datetime import datetime
@@ -129,6 +130,18 @@ def doctor_register(request: DoctorRegisterRequest, background_tasks: Background
                 role="doctor",
                 email=user.email,
             ),
+        )
+
+        # Emit doctor registered event
+        emit_event(
+            event=Events.DOCTOR_REGISTERED,
+            entity_type="doctor",
+            entity_id=user_id,
+            status="registered",
+            actor_role="system",
+            extra={
+                "provider_id": user_id,
+            },
         )
 
         return {

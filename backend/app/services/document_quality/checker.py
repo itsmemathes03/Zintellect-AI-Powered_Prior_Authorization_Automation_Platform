@@ -201,6 +201,143 @@ class DocumentQualityChecker:
             # Invalid date format
             return False, None
 
+    def perform_quality_check(
+        self,
+        file_content: bytes,
+        document_id: str,
+        document_name: str,
+        existing_hashes: Optional[Set[str]] = None,
+        expected_document_types: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        policy_recency_days: Optional[int] = None,
+    ) -> DocumentQualityResult:
+        """
+        Synchronous quality check entry point called by DocumentQualityService.
+
+        Performs:
+          - file-hash duplicate detection
+          - page-count estimation from raw bytes
+          - blank-page detection (heuristic)
+          - OCR quality placeholder
+          - metadata completeness validation
+          - document-type validation
+          - recency check (optional)
+
+        Returns DocumentQualityResult with all required response fields.
+        """
+        if existing_hashes is None:
+            existing_hashes = set()
+        if expected_document_types is None:
+            expected_document_types = []
+        if metadata is None:
+            metadata = {}
+
+        warnings: List[str] = []
+
+        # --- File-hash duplicate detection ---
+        file_hash = self.calculate_file_hash(file_content)
+        is_dup = self.is_duplicate(file_hash, existing_hashes)
+        duplicate_status = "DUPLICATE" if is_dup else "UNIQUE"
+        if is_dup:
+            warnings.append("Document matches an existing file hash (possible duplicate).")
+
+        # --- Page-count estimation ---
+        # Very rough: count PDF page objects in raw bytes.
+        try:
+            page_count = max(1, file_content.count(b"/Type /Page") or 1)
+        except Exception:
+            page_count = 1
+
+        # --- Blank-page detection (heuristic) ---
+        blank_pages: List[int] = []
+        possible_missing: List[int] = []
+        if page_count == 1 and len(file_content) < 200:
+            blank_pages.append(1)
+            warnings.append("Document appears to contain very little content (possible blank or corrupt page).")
+
+        # --- OCR quality placeholder ---
+        # Without actually running OCR here we score based on file size heuristic.
+        # Larger files tend to have more text content.
+        if len(file_content) > 5000:
+            ocr_quality = 0.85
+        elif len(file_content) > 1000:
+            ocr_quality = 0.60
+        else:
+            ocr_quality = 0.30
+            warnings.append("Document is very small; OCR extraction may yield limited text.")
+
+        # --- Document-type detection ---
+        detected_type = "unknown"
+        if file_content[:5] == b"%PDF-":
+            detected_type = "pdf"
+        elif file_content[:8] == b"\x89PNG\r\n\x1a\n":
+            detected_type = "png"
+        elif file_content[:2] == b"\xff\xd8":
+            detected_type = "jpeg"
+        elif b"PK" == file_content[:2]:
+            detected_type = "docx"
+
+        type_valid = self.validate_document_type(detected_type, expected_document_types)
+        if not type_valid and expected_document_types:
+            warnings.append(
+                f"Detected type '{detected_type}' is not in expected types {expected_document_types}."
+            )
+
+        # --- Metadata completeness ---
+        required_fields = ["patient_id", "provider_id"]
+        metadata_score, missing_fields = self.validate_metadata_completeness(metadata, required_fields)
+        if missing_fields:
+            warnings.append(f"Missing metadata fields: {', '.join(missing_fields)}.")
+
+        # --- Recency check ---
+        recency_valid = True
+        if policy_recency_days is not None:
+            doc_date = metadata.get("document_date") or metadata.get("service_date")
+            recency_valid, _ = self.validate_recency(doc_date, policy_recency_days)
+            if not recency_valid:
+                warnings.append(
+                    f"Document may be older than the policy recency requirement of {policy_recency_days} days."
+                )
+
+        # --- Overall quality score (0-100) ---
+        ocr_component = ocr_quality * 30                         # max 30
+        blank_component = (1.0 - (len(blank_pages) / page_count if page_count else 0)) * 20  # max 20
+        dup_component = (0.0 if is_dup else 1.0) * 20           # max 20
+        meta_component = metadata_score * 20                     # max 20
+        type_component = (1.0 if type_valid else 0.5) * 10       # max 10
+        overall = ocr_component + blank_component + dup_component + meta_component + type_component
+
+        # --- Quality status ---
+        if overall >= 70:
+            quality_status = DocumentQualityStatus.GOOD
+        elif overall >= 40:
+            quality_status = DocumentQualityStatus.WARNING
+        else:
+            quality_status = DocumentQualityStatus.FAIL
+
+        # --- Recommended action ---
+        if quality_status == DocumentQualityStatus.GOOD:
+            recommended_action = "Document meets quality standards."
+        elif quality_status == DocumentQualityStatus.WARNING:
+            recommended_action = "Review document manually for potential issues."
+        else:
+            recommended_action = "Please resubmit a clear, legible document with all required pages."
+
+        return DocumentQualityResult(
+            document_id=document_id,
+            document_name=document_name,
+            quality_status=quality_status,
+            overall_quality=round(overall, 2),
+            ocr_quality=ocr_quality,
+            page_count=page_count,
+            blank_pages=blank_pages,
+            possible_missing_pages=possible_missing,
+            duplicate_status=duplicate_status,
+            detected_document_type=detected_type,
+            warnings=warnings,
+            recommended_action=recommended_action,
+        )
+
     async def check_document_quality(
         self,
         document_data: Dict[str, Any],

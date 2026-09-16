@@ -1,22 +1,31 @@
 import os
-import chromadb
-from chromadb.config import Settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ==========================================
-# CHROMA CLIENT
+# CHROMA CLIENT — graceful degradation
 # ==========================================
 
-client = chromadb.PersistentClient(
-    path=os.getenv("CHROMA_DB_PATH", "app/vector_db/chroma")
-)
+client = None
+medical_collection = None
+policy_collection = None
 
-# ==========================================
-# COLLECTIONS
-# ==========================================
+try:
+    import chromadb
+    from chromadb.config import Settings
 
-medical_collection = client.get_or_create_collection(name="medical_chunks")
+    client = chromadb.PersistentClient(
+        path=os.getenv("CHROMA_DB_PATH", "app/vector_db/chroma")
+    )
 
-policy_collection = client.get_or_create_collection(name="policy_chunks")
+    medical_collection = client.get_or_create_collection(name="medical_chunks")
+    policy_collection = client.get_or_create_collection(name="policy_chunks")
+except Exception as exc:
+    logger.warning(
+        f"ChromaDB unavailable ({type(exc).__name__}: {exc}). "
+        "Vector search features will be disabled."
+    )
 
 
 # ==========================================
@@ -25,6 +34,9 @@ policy_collection = client.get_or_create_collection(name="policy_chunks")
 
 
 def store_medical_embeddings(embedded_chunks):
+    if medical_collection is None:
+        logger.warning("ChromaDB unavailable — skipping store_medical_embeddings")
+        return
 
     for chunk in embedded_chunks:
         medical_collection.add(
@@ -53,6 +65,9 @@ def store_policy_embeddings(embedded_chunks):
     re-matching the same policy is idempotent - no duplicate
     vectors accumulate across requests.
     """
+    if policy_collection is None:
+        logger.warning("ChromaDB unavailable — skipping store_policy_embeddings")
+        return
 
     for chunk in embedded_chunks:
         policy_collection.upsert(
@@ -76,6 +91,8 @@ def store_policy_embeddings(embedded_chunks):
 
 
 def search_medical_chunks(query_embedding, top_k=5):
+    if medical_collection is None:
+        return {"ids": [[]], "documents": [[]], "distances": [[]]}
 
     results = medical_collection.query(
         query_embeddings=[query_embedding], n_results=top_k
@@ -90,6 +107,8 @@ def search_medical_chunks(query_embedding, top_k=5):
 
 
 def search_policy_chunks(query_embedding, top_k=5):
+    if policy_collection is None:
+        return {"ids": [[]], "documents": [[]], "distances": [[]]}
 
     results = policy_collection.query(
         query_embeddings=[query_embedding], n_results=top_k
@@ -104,6 +123,8 @@ def search_policy_chunks(query_embedding, top_k=5):
 
 
 def search_request_chunks(request_id, query_embedding, top_k=5):
+    if medical_collection is None:
+        return {"ids": [[]], "documents": [[]], "distances": [[]]}
 
     results = medical_collection.query(
         query_embeddings=[query_embedding],
@@ -120,6 +141,8 @@ def search_request_chunks(request_id, query_embedding, top_k=5):
 
 
 def search_policy_by_id(policy_id, query_embedding, top_k=5):
+    if policy_collection is None:
+        return {"ids": [[]], "documents": [[]], "distances": [[]]}
 
     results = policy_collection.query(
         query_embeddings=[query_embedding],
@@ -136,7 +159,8 @@ def search_policy_by_id(policy_id, query_embedding, top_k=5):
 
 
 def delete_request_embeddings(request_id):
-
+    if medical_collection is None:
+        return
     medical_collection.delete(where={"request_id": request_id})
 
 
@@ -146,7 +170,8 @@ def delete_request_embeddings(request_id):
 
 
 def delete_policy_embeddings(policy_id):
-
+    if policy_collection is None:
+        return
     policy_collection.delete(where={"policy_id": policy_id})
 
 
@@ -156,8 +181,11 @@ def delete_policy_embeddings(policy_id):
 
 
 def get_collection_stats():
+    if medical_collection is None or policy_collection is None:
+        return {"medical_chunks": 0, "policy_chunks": 0, "chromadb_available": False}
 
     return {
         "medical_chunks": medical_collection.count(),
         "policy_chunks": policy_collection.count(),
+        "chromadb_available": True,
     }

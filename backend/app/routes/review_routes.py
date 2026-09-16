@@ -31,6 +31,7 @@ from app.models.enums import RequestStatus
 from app.services.auth_middleware import require_role
 from app.services.audit_service import create_audit_log
 from app.services.n8n_service import notify_n8n
+from app.services.n8n_event_emitter import emit_event, Events
 
 router = APIRouter(prefix="/review", tags=["Review (HCI-03)"])
 
@@ -316,18 +317,31 @@ def submit_human_decision(
     #   - Patient/provider email via the n8n workflow
     # Do NOT send duplicate direct emails here — n8n is the single
     # final-decision notification/email path.
-    notify_n8n(
+
+    # Map decision to specific event name
+    if decision == "Approved":
+        event_name = Events.PRIOR_AUTHORIZATION_APPROVED
+    elif decision == "Rejected":
+        event_name = Events.PRIOR_AUTHORIZATION_REJECTED
+    else:
+        event_name = Events.ADDITIONAL_INFORMATION_REQUESTED
+
+    emit_event(
+        event=event_name,
+        entity_type="prior_authorization",
+        entity_id=request_id,
         request_id=request_id,
         status=final_status,
-        confidence_score=req.confidence_score,
-        insurance_provider=req.insurance_provider or "",
-        procedure_code=req.procedure_code or "",
-        matched_conditions=[],
-        missing_requirements=[],
-        uploaded_document_types=[],
-        processing_time_seconds=0.0,
-        provider_id=reviewer_id,
-        provider_name=provider_name,
+        actor_role="provider",
+        extra={
+            "confidence_score": req.confidence_score,
+            "insurance_provider": req.insurance_provider or "",
+            "procedure_code": req.procedure_code or "",
+            "provider_id": reviewer_id,
+            "provider_name": provider_name,
+            "reviewer_id": reviewer_id,
+            "review_notes": body.notes or "",
+        },
     )
 
     return {
